@@ -16,8 +16,8 @@ The main idea is to isolate customer's data in different schema. One customer
 could bring to your SaaS application on `this thread on Hacker News
 <http://news.ycombinator.com/item?id=1565674>`_.
 
-How it work?
-============
+How it works?
+=============
 
 On the running side, schema isolation is quite easy, set up a middleware that
 make dispatch, a signal and *voilà* (almost).
