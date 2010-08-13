@@ -13,6 +13,8 @@ if not hasattr(settings, 'APPSCHEMA_SHARED_APPS'):
 if not hasattr(settings, 'APPSCHEMA_DEFAULT_PATH'):
     settings.APPSCHEMA_DEFAULT_PATH = ['public']
 
+if not hasattr(settings, 'APPSCHEMA_BOTH_APPS'):
+    settings.APPSCHEMA_BOTH_APPS = ()
 
 def syncdb():
     """ Returns good syncdb module based on installed apps """

@@ -26,16 +26,20 @@ def syncdb_apps(apps, schema=None, **options):
     
     # Syncdb with schema
     #
-    # We first handle the case of South which is both shared and isolated
-    # As South tables are already present in public schema, we can't sync
+    # We first handle the case of apps that are both shared and isolated.
+    # As this tables are already present in public schema, we can't sync
     # with a search_path <schema>,public
+    
+    shared_apps, _ = get_apps()
+    both_apps = [x for x in apps if x in shared_apps]
+    shared_apps = [x for x in apps if x not in both_apps]
+    
     schema_store.schema = schema
     
     if 'south' in apps:
         try:
-            apps.remove('south')
             schema_store.force_path()
-            run_with_apps(['south'], wrapper, **options)
+            run_with_apps(both_apps, wrapper, **options)
         except ValueError:
             pass
     
@@ -43,7 +47,7 @@ def syncdb_apps(apps, schema=None, **options):
         # For other apps, we work with seach_path <schema>,public to
         # properly handle cross schema foreign keys.
         schema_store.set_path()
-        run_with_apps(apps, wrapper, **options)
+        run_with_apps(shared_apps, wrapper, **options)
     finally:
         schema_store.clear()
 

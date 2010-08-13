@@ -68,9 +68,9 @@ class Command(BaseCommand):
             
             for schema in Schema.objects.active():
                 if verbosity:
-                    print "\n------------------------"
-                    print   "ISOLATED APPS on schema: %s" % schema.name
-                    print   "------------------------\n"
+                    print "\n----------------------------------"
+                    print   "ISOLATED APPS migration on schema: %s" % schema.name
+                    print   "----------------------------------\n"
                 migrate_apps(isolated_apps, schema=schema.name, **options)
         finally:
             load_post_syncdb_signals()

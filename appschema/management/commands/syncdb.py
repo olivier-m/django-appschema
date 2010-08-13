@@ -28,9 +28,9 @@ class Command(NoArgsCommand):
         try:
             if len(shared_apps) > 0:
                 if verbosity:
-                    print "----------------"
-                    print "SHARED APPS sync"
-                    print "----------------\n"
+                    print "------------------"
+                    print "SHARED APPS syncdb"
+                    print "------------------\n"
                 
                 syncdb_apps(shared_apps, **options)
             
@@ -39,9 +39,9 @@ class Command(NoArgsCommand):
             
             for schema in Schema.objects.active():
                 if verbosity:
-                    print "\n------------------------"
-                    print   "ISOLATED APPS on schema: %s" % schema.name
-                    print   "------------------------\n"
+                    print "\n-------------------------------"
+                    print   "ISOLATED APPS syncdb on schema: %s" % schema.name
+                    print   "-------------------------------\n"
                     
                 syncdb_apps(isolated_apps, schema.name, **options)
         finally:

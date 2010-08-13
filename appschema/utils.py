@@ -17,20 +17,22 @@ def get_apps():
     
     Obviously, appschema cannot be in isolated apps.
     """
-    if not hasattr(settings, 'APPSCHEMA_SHARED_APPS'):
-        shared = []
-    else:
-        shared = list(settings.APPSCHEMA_SHARED_APPS)
-        if 'appschema' not in shared:
-            shared.append('appschema')
+    all_apps = list(settings.INSTALLED_APPS)
+    shared_apps = list(settings.APPSCHEMA_SHARED_APPS)
+    both_apps = list(settings.APPSCHEMA_BOTH_APPS)
     
-    isolated = [app for app in settings.INSTALLED_APPS if app not in shared]
+    # South models should be shared and isolated
+    if 'south' in all_apps and 'south' not in both_apps:
+        both_apps.append('south')
     
-    if 'south' in settings.INSTALLED_APPS:
-        if not 'south' in shared:
-            shared.append('south')
-        if not 'south' in isolated:
-            isolated.append('south')
+    # Appschema cannot be isolated
+    if 'appschema' not in shared_apps:
+        shared_apps.append('appschema')
+    
+    #isolated = [app for app in all_apps if app not in shared_apps]
+    
+    isolated = [x for x in all_apps if x not in shared_apps or x in both_apps]
+    shared = [x for x in all_apps if x in shared_apps or x in both_apps]
     
     return shared, isolated
 
