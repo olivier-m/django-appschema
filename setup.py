@@ -14,7 +14,7 @@ setup(
     description='SaaS helper that isolates django apps in schemas.',
     author='Olivier Meunier',
     author_email='om@neokraft.net',
-    url='',
+    url='http://bitbucket.org/cedarlab/django-appschema/',
     packages=packages,
     classifiers=[
         'Development Status :: %s' % version,
