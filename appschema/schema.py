@@ -9,8 +9,7 @@ from django.db import connection, models, transaction
 __all__ = ('schema_store',)
 
 def get_path(*args):
-    path = ['"%s"' % x for x in list(args) + list(settings.APPSCHEMA_DEFAULT_PATH)]
-    return ','.join(path)
+    return list(args) + list(settings.APPSCHEMA_DEFAULT_PATH)
 
 from threading import local
 class SchemaStore(local):
@@ -34,11 +33,14 @@ class SchemaStore(local):
     def set_path(self, cursor=None):
         cursor = cursor or connection.cursor()
         args = self.schema and [self.schema] or []
-        cursor.execute('SET search_path = %s' % get_path(*args))
+        path = get_path(*args)
+        pattern = ','.join(['%s'] * len(path))
+        
+        cursor.execute('SET search_path = %s' % pattern, path)
     
     def force_path(self, cursor=None):
         cursor = cursor or connection.cursor()
-        cursor.execute('SET search_path = "%s"' % self.schema)
+        cursor.execute('SET search_path = %s', [self.schema])
     
     def reset_path(self, cursor=None):
         self.clear()

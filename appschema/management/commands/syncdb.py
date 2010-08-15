@@ -4,6 +4,7 @@
 # See the LICENSE for more information.
 
 from django.conf import settings
+from django.core import management
 from django.core.management.base import NoArgsCommand
 from django.core.management.sql import custom_sql_for_model
 from django.db.models.loading import cache
@@ -22,6 +23,8 @@ class Command(NoArgsCommand):
     
     def handle_noargs(self, **options):
         verbosity = int(options.get('verbosity', 0))
+        migrate = options.get('migrate', False)
+        options['migrate'] = False
         
         shared_apps, isolated_apps = get_apps()
         
@@ -46,5 +49,8 @@ class Command(NoArgsCommand):
                 syncdb_apps(isolated_apps, schema.name, **options)
         finally:
             load_post_syncdb_signals()
+        
+        if migrate:
+            management.call_command("migrate")
         
     

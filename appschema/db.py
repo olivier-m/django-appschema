@@ -52,12 +52,10 @@ def syncdb_apps(apps, schema=None, **options):
         schema_store.clear()
 
 def migrate_apps(apps, schema=None, **options):
-    migration = migrate.Command().execute
-    
     def wrapper(_apps, *args, **kwargs):
         load_post_syncdb_signals()
         for _app in _apps:
-            migration(_app, **kwargs)
+            migrate.Command().execute(_app, **kwargs)
     
     # Migrate without schema (on public)
     if not schema:

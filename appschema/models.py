@@ -31,6 +31,7 @@ def new_schema(name, public_name, is_active=True, **options):
     
     try:
         cursor = connection.cursor()
+        # We can't use params with system names
         cursor.execute('CREATE SCHEMA "%s"' % name)
         transaction.commit_unless_managed()
         
@@ -63,6 +64,7 @@ def drop_schema(name):
     
     cursor = connection.cursor()
     try:
+        # We can't use params with system names
         cursor.execute('DROP SCHEMA "%s" CASCADE' % name)
     except DatabaseError:
         pass
