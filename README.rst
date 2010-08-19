@@ -44,10 +44,8 @@ Another management command called ``createschema`` allows you to create a new
 schema and performs syncdb (and migrate if available) on the new created
 schema.
 
-Please note
-===========
-
-This **highly experimental** app works **only for PostgreSQL**.
+Schema creation from your web app
+---------------------------------
 
 If you look at the code, you'll find a function called ``new_schema``. You
 could be tempted to use it directly in your web app (for registration
@@ -56,8 +54,26 @@ INSTALLED_APPS and the Django apps cache during execution. What is not an
 issue during a management command could become a nightmare in a runing Django
 process.
 
-I'm looking at a cool solution for this issue (master schema duplication or
-raw sql generation in a module).
+A first solution comes with ``schematemplate`` management command. This
+command creates a temporary schema, executes ``pg_dump`` on it and prints the
+result on standard output. It replaces the temporary schema name by a
+substitution pattern named ``%(schema_name)``. You can store this result for
+later use. Runing ``schematemplate`` command on each deployment is a good
+idea.
+
+Alternative: clone_schema stored procedure
+------------------------------------------
+
+Appschema provides a PostgreSQL (version 8.4 only) stored procedure called
+``clone_schema(source, destination)`` (In contrib directory). It makes a copy
+of ``source`` schema on ``destination``. Create a master schema and you could
+use it as a source for ``clone_schema``. As this procedure is still a work in
+progress, you may prefer using the ``schematemplate`` way.
+
+Please note
+===========
+
+This **highly experimental** app works **only for PostgreSQL**.
 
 You'll find a FqdnMiddleware which switchs schema based on the host name of
 the HTTP request. Feel free to make your own based on your needs.
