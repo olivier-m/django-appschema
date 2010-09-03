@@ -10,6 +10,10 @@ from django.db.models.loading import cache
 from django.db.models.signals import post_syncdb
 from django.utils.datastructures import SortedDict
 
+def escape_schema_name(name):
+    """ Escape system names for PostgreSQL. Should do the trick. """
+    return name.replace('"', '""')
+
 def get_apps():
     """
     Returns a tupple of shared and isolated apps. If south is in

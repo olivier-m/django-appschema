@@ -13,14 +13,11 @@ from appschema import syncdb, migrate
 from appschema.db import syncdb_apps, migrate_apps
 from appschema.schema import schema_store
 from appschema.south_utils import get_migration_candidates
-from appschema.utils import get_apps
+from appschema.utils import get_apps, escape_schema_name
 
 def new_schema(name, public_name, is_active=True, **options):
     """
-    This function creates a schema and perform a syncdb on it.
-    As we call some syncdb and migrate management commands, we can't rely on
-    transaction support.
-    We are going to catch any exception (including SystemExit).
+    This function adds a schema in schema model and creates physical schema.
     """
     
     try:
@@ -29,10 +26,20 @@ def new_schema(name, public_name, is_active=True, **options):
     except IntegrityError:
         raise Exception('Schema already exists.')
     
+    create_schema(name, **options)
+    return schema
+
+def create_schema(name, **options):
+    """
+    This function creates a schema and perform a syncdb on it.
+    As we call some syncdb and migrate management commands, we can't rely on
+    transaction support.
+    We are going to catch any exception (including SystemExit).
+    """
     try:
         cursor = connection.cursor()
         # We can't use params with system names
-        cursor.execute('CREATE SCHEMA "%s"' % name)
+        cursor.execute('CREATE SCHEMA "%s"' % escape_schema_name(name))
         transaction.commit_unless_managed()
         
         defaults = {
@@ -51,23 +58,25 @@ def new_schema(name, public_name, is_active=True, **options):
         syncdb_apps(isolated_apps, name, **sync_options)
         migrate_apps(get_migration_candidates(isolated_apps), name, **options)
         schema_store.reset_path()
-        
-        return schema
     except BaseException, e:
         drop_schema(name)
         raise Exception(str(e))
     
 
-@transaction.commit_on_success
+@transaction.commit_manually
 def drop_schema(name):
     Schema.objects.filter(name=name).delete()
     
     cursor = connection.cursor()
     try:
         # We can't use params with system names
-        cursor.execute('DROP SCHEMA "%s" CASCADE' % name)
+        cursor.execute('DROP SCHEMA "%s" CASCADE' % escape_schema_name(name))
+        transaction.commit()
     except DatabaseError:
-        pass
+        transaction.rollback()
+    except:
+        transaction.rollback()
+        raise
 
 class SchemaManager(models.Manager):
     def active(self):
