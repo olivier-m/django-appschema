@@ -9,7 +9,7 @@ from subprocess import Popen, PIPE
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
-from appschema.models import new_schema, drop_schema
+from appschema.models import create_schema, drop_schema
 
 class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
@@ -19,6 +19,8 @@ class Command(BaseCommand):
             default=False, help='Output non formatted schema dump'),
         make_option('--aspython', action='store_true', dest='as_python',
             default=False, help='Output dump in a python string.'),
+        make_option('--tempname', action='store', dest='schema_name',
+            default='__master__', help='Name of temporary schema')
     )
     help = "Dumps the whole base schema creation and gives result on stdout."
     
@@ -27,27 +29,27 @@ class Command(BaseCommand):
         pg_dump = options.get('pgdump')
         raw = options.get('raw', False)
         as_python = options.get('as_python', False)
+        schema_name = options.get('schema_name', '__master__')
         
-        schema_name = '__master__'
+        create_schema(schema_name, **{'verbosity': 0})
         
-        new_schema(schema_name, schema_name, False, **{'verbosity': 0})
-        
-        pf = Popen(
-            [pg_dump,
-                '-n', schema_name,
-                '--no-owner',
-                '--inserts',
-                settings.DATABASES['default']['NAME']
-            ],
-            env={'PGPASSWORD': settings.DATABASES['default']['PASSWORD']},
-            stdout=PIPE
-        )
-        
-        dump = pf.communicate()[0]
-        drop_schema(schema_name)
+        try:
+            pf = Popen(
+                [pg_dump,
+                    '-n', schema_name,
+                    '--no-owner',
+                    '--inserts',
+                    settings.DATABASES['default']['NAME']
+                ],
+                env={'PGPASSWORD': settings.DATABASES['default']['PASSWORD']},
+                stdout=PIPE
+            )
+            dump = pf.communicate()[0]
+        finally:
+            drop_schema(schema_name)
         
         re_comments = re.compile(r'^--.*\n', re.M)
-        re_duplines = re.compile(r'^\n\n', re.M)
+        re_duplines = re.compile(r'^\n\n+', re.M)
         
         # Adding string template schema_name
         if not raw or as_python:
