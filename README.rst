@@ -89,5 +89,5 @@ isolated app models referencing shared one, the opposite is not true.
 License
 =======
 
-Django ipinfodb is released under the MIT license. See the LICENSE
+Django appschema is released under the MIT license. See the LICENSE
 file for the complete license.
