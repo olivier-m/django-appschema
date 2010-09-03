@@ -64,6 +64,15 @@ def create_schema(name, **options):
         raise Exception(str(e))
     
 
+def new_schema_from_template(name, public_name, template_file, is_active=True):
+    try:
+        schema = Schema(name=name, public_name=public_name, is_active=is_active)
+        schema.save()
+    except IntegrityError:
+        raise Exception('Schema already exists.')
+    
+    create_schema_from_template(name, template_file)
+
 @transaction.commit_manually
 def create_schema_from_template(name, template_file):
     """

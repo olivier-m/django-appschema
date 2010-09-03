@@ -61,6 +61,9 @@ substitution pattern named ``%(schema_name)``. You can store this result for
 later use. Runing ``schematemplate`` command on each deployment is a good
 idea.
 
+New: A function called ``new_schema_from_template`` (in ``appschema.models``)
+performs the schema creation based on this template file.
+
 Alternative: clone_schema stored procedure
 ------------------------------------------
 
