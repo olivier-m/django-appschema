@@ -30,9 +30,8 @@ def syncdb():
 def migrate():
     """ Returns South migrate command if South is installed """
     if not 'south' in settings.INSTALLED_APPS:
-        raise Exception('South is not in INSTALLED_APPS')
+        return None
     
     module = __import__('south.management.commands', globals(), locals(), ['migrate'], -1)
     return module.migrate
-
 

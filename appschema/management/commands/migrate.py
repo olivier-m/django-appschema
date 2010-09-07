@@ -4,7 +4,7 @@
 # See the LICENSE for more information.
 
 from django.conf import settings
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from south.db import DEFAULT_DB_ALIAS
 
@@ -25,6 +25,9 @@ class Command(BaseCommand):
     backwards=False, fake=False, db_dry_run=False, show_list=False,
     database=DEFAULT_DB_ALIAS, delete_ghosts=False, ignore_ghosts=False,
     **options):
+        if not 'south' in settings.INSTALLED_APPS:
+            raise CommandError('South is not installed.')
+        
         verbosity = int(options.get('verbosity', 0))
         shared, isolated = get_apps()
         
