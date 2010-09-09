@@ -54,7 +54,7 @@ def load_post_syncdb_signals():
     try:
         import south.signals
         south.signals.post_migrate.receivers = []
-        reload(south.signals)
+        #reload(south.signals)
     except ImportError:
         pass
     
