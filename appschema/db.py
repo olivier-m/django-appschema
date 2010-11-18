@@ -3,6 +3,8 @@
 # This file is part of Django appschema released under the MIT license.
 # See the LICENSE for more information.
 
+from django import db
+
 from appschema import syncdb, migrate
 syncdb = syncdb()
 migrate = migrate()
@@ -66,11 +68,20 @@ def migrate_apps(apps, schema=None, **options):
     # Migrate with schema
     schema_store.schema = schema
     
+    if len(db.connections.databases) > 1:
+        raise Exception('Appschema doest not support multi databases (yet?)')
+    
     try:
         # For other apps, we work with seach_path <schema>,public to
         # properly handle cross schema foreign keys.
         schema_store.set_path()
+        
+        # South sometimes needs a schema settings to be set and take it from
+        # Django db settings SCHEMA
+        db.connection.settings_dict['SCHEMA'] = schema
+        
         run_with_apps(apps, wrapper, **options)
     finally:
         schema_store.clear()
+        del db.connection.settings_dict['SCHEMA']
     
