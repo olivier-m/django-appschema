@@ -34,13 +34,21 @@ class Command(BaseCommand):
         create_schema(schema_name, **{'verbosity': 0})
         
         try:
-            pf = Popen(
-                [pg_dump,
-                    '-n', schema_name,
-                    '--no-owner',
-                    '--inserts',
-                    settings.DATABASES['default']['NAME']
-                ],
+            cmd = [pg_dump,
+                '-n', schema_name,
+                '--no-owner',
+                '--inserts'
+            ]
+
+            if settings.DATABASES['default']['USER']:
+                cmd.extend(['-U', settings.DATABASES['default']['USER']])
+
+            if settings.DATABASES['default']['HOST']:
+                cmd.extend(['-h', settings.DATABASES['default']['HOST']])
+
+            cmd.append(settings.DATABASES['default']['NAME'])
+            
+            pf = Popen(cmd,
                 env={'PGPASSWORD': settings.DATABASES['default']['PASSWORD']},
                 stdout=PIPE
             )
