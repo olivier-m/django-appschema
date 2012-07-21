@@ -7,9 +7,13 @@ import re
 from subprocess import Popen, PIPE
 
 from django.conf import settings
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
+import appschema
 from appschema.models import create_schema, drop_schema
+
+syncdb = appschema.syncdb()
+
 
 class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
@@ -22,17 +26,22 @@ class Command(BaseCommand):
         make_option('--tempname', action='store', dest='schema_name',
             default='__master__', help='Name of temporary schema')
     )
+
+    option_list += tuple([x for x in syncdb.Command.option_list if x.dest == "database"])
+
     help = "Dumps the whole base schema creation and gives result on stdout."
-    
+
     def handle(self, *fixture_labels, **options):
-        verbosity = int(options.get('verbosity', 0))
         pg_dump = options.get('pgdump')
         raw = options.get('raw', False)
         as_python = options.get('as_python', False)
         schema_name = options.get('schema_name', '__master__')
-        
-        create_schema(schema_name, **{'verbosity': 0})
-        
+
+        create_schema(schema_name, **{
+            'verbosity': 0,
+            'database': options.get("database")
+        })
+
         try:
             cmd = [pg_dump,
                 '-n', schema_name,
@@ -47,7 +56,7 @@ class Command(BaseCommand):
                 cmd.extend(['-h', settings.DATABASES['default']['HOST']])
 
             cmd.append(settings.DATABASES['default']['NAME'])
-            
+
             pf = Popen(cmd,
                 env={'PGPASSWORD': settings.DATABASES['default']['PASSWORD']},
                 stdout=PIPE
@@ -55,21 +64,20 @@ class Command(BaseCommand):
             dump = pf.communicate()[0]
         finally:
             drop_schema(schema_name)
-        
+
         re_comments = re.compile(r'^--.*\n', re.M)
         re_duplines = re.compile(r'^\n\n+', re.M)
-        
+
         # Adding string template schema_name
         if not raw or as_python:
             dump = dump.replace('%', '%%')
             dump = dump.replace(schema_name, '%(schema_name)s')
-        
+
         # A bit nicer to read
         dump = re_comments.sub('', dump)
         dump = re_duplines.sub('\n', dump)
-        
+
         if as_python:
             dump = '# -*- coding: utf-8 -*-\nschema_sql = """%s"""' % dump
-        
+
         print dump
-    

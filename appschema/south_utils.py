@@ -12,6 +12,7 @@ try:
 except ImportError:
     south_ok = False
 
+
 def get_migration_candidates(apps):
     """
     This function returns only apps that could be migrated.
@@ -19,12 +20,12 @@ def get_migration_candidates(apps):
     res = []
     if not south_ok:
         return res
-    
+
     for app in apps:
         try:
             Migrations(app)
             res.append(app)
         except (NoMigrations, ImproperlyConfigured):
             pass
-    
+
     return res

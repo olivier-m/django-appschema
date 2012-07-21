@@ -14,7 +14,7 @@ SELECT
     THEN NULL
     ELSE make_plpgsql()
 END;
- 
+
 DROP FUNCTION make_plpgsql();
 
 --
@@ -30,15 +30,15 @@ DECLARE
 	v_seq_field record;
 	v_func text;
 	v_view record;
-	
+
 	v_sql text;
 BEGIN
 	-- Creatin schema
 	EXECUTE('CREATE SCHEMA "' || i_dst || '";');
-	
+
 	-- Copying tables (with data)
-	FOR v_table IN SELECT table_name 
-		FROM information_schema.tables 
+	FOR v_table IN SELECT table_name
+		FROM information_schema.tables
 		WHERE table_type = 'BASE TABLE'
 		AND table_schema = i_src
 		ORDER BY table_name
@@ -56,7 +56,7 @@ BEGIN
 			|| ' (SELECT * FROM '|| i_src || '.' || v_table || ')'
 		);
 	END LOOP;
-	
+
 	-- Copying sequences
 	FOR v_seq IN SELECT c.oid, c.relname
 		FROM pg_catalog.pg_class c
@@ -67,7 +67,7 @@ BEGIN
 		-- There is not way to obtain sequence definition then we simply
 		-- create a new one. That's a bit lame.
 		EXECUTE('CREATE SEQUENCE ' || i_dst || '.' || v_seq.relname);
-		
+
 		-- We need to alter every field that uses source schema sequences
 		-- to use newly created ones
 		FOR v_seq_field IN SELECT DISTINCT cl.relname, att.attname
@@ -83,9 +83,9 @@ BEGIN
 			EXECUTE('ALTER SEQUENCE ' || i_dst || '.' || v_seq.relname
 					|| ' OWNED BY ' || i_dst || '.' || v_seq_field.relname || '.' || v_seq_field.attname);
 		END LOOP;
-		
+
 	END LOOP;
-	
+
 	-- Copying foreign keys
 	FOR v_fk IN SELECT c.relname as tablename, conname,
 		pg_catalog.pg_get_constraintdef(r.oid, true) as condef
@@ -101,7 +101,7 @@ BEGIN
 			|| ' ADD CONSTRAINT ' || v_fk.conname || ' ' || v_fk.condef
 		);
 	END LOOP;
-	
+
 	-- Copying functions
 	FOR v_func IN SELECT pg_catalog.pg_get_functiondef(p.oid)
 		FROM pg_catalog.pg_proc p
@@ -111,7 +111,7 @@ BEGIN
 		v_func := replace(v_func, i_src || '.', i_dst || '.');
 		EXECUTE(v_func);
 	END LOOP;
-	
+
 	-- Copying views
 	-- TODO: handle custom column names in views
 	FOR v_view IN SELECT c.relname, pg_catalog.pg_get_viewdef(c.oid) as viewdef
@@ -123,7 +123,7 @@ BEGIN
 		v_view.viewdef := replace(v_view.viewdef, i_src || '.', i_dst || '.');
 		EXECUTE('CREATE VIEW ' || i_dst || '.' || v_view.relname || ' AS ' || v_view.viewdef);
 	END LOOP;
-	
+
 	RETURN 1;
 END;
 $body$ LANGUAGE 'plpgsql';

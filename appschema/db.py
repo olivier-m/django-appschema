@@ -5,12 +5,13 @@
 
 from django import db
 
-from appschema import syncdb, migrate
-syncdb = syncdb()
-migrate = migrate()
+import appschema
+syncdb = appschema.syncdb()
+migrate = appschema.migrate()
 
 from appschema.schema import schema_store
 from appschema.utils import get_apps, load_post_syncdb_signals, run_with_apps
+
 
 def syncdb_apps(apps, schema=None, **options):
     """
@@ -20,31 +21,31 @@ def syncdb_apps(apps, schema=None, **options):
     def wrapper(_apps, *args, **kwargs):
         load_post_syncdb_signals()
         return syncdb.Command().execute(**kwargs)
-    
+
     # Syncdb without schema (on public)
     if not schema:
         schema_store.reset_path()
         return run_with_apps(apps, wrapper, **options)
-    
+
     # Syncdb with schema
     #
     # We first handle the case of apps that are both shared and isolated.
     # As this tables are already present in public schema, we can't sync
     # with a search_path <schema>,public
-    
+
     shared_apps, _ = get_apps()
     both_apps = [x for x in apps if x in shared_apps]
     shared_apps = [x for x in apps if x not in both_apps]
-    
+
     schema_store.schema = schema
-    
+
     if 'south' in apps:
         try:
             schema_store.force_path()
             run_with_apps(both_apps, wrapper, **options)
         except ValueError:
             pass
-    
+
     try:
         # For other apps, we work with seach_path <schema>,public to
         # properly handle cross schema foreign keys.
@@ -53,35 +54,35 @@ def syncdb_apps(apps, schema=None, **options):
     finally:
         schema_store.clear()
 
+
 def migrate_apps(apps, schema=None, **options):
     def wrapper(_apps, *args, **kwargs):
         load_post_syncdb_signals()
         for _app in _apps:
             migrate.Command().execute(_app, **kwargs)
-    
+
     # Migrate without schema (on public)
     if not schema:
         schema_store.reset_path()
         run_with_apps(apps, wrapper, **options)
         return
-    
+
     # Migrate with schema
     schema_store.schema = schema
-    
+
     if len(db.connections.databases) > 1:
         raise Exception('Appschema doest not support multi databases (yet?)')
-    
+
     try:
         # For other apps, we work with seach_path <schema>,public to
         # properly handle cross schema foreign keys.
         schema_store.set_path()
-        
+
         # South sometimes needs a schema settings to be set and take it from
         # Django db settings SCHEMA
         db.connection.settings_dict['SCHEMA'] = schema
-        
+
         run_with_apps(apps, wrapper, **options)
     finally:
         schema_store.clear()
         del db.connection.settings_dict['SCHEMA']
-    
