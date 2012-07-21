@@ -3,6 +3,7 @@
 # This file is part of Django appschema released under the MIT license.
 # See the LICENSE for more information.
 from optparse import make_option
+import os
 import re
 from subprocess import Popen, PIPE
 
@@ -56,11 +57,10 @@ class Command(BaseCommand):
                 cmd.extend(['-h', settings.DATABASES['default']['HOST']])
 
             cmd.append(settings.DATABASES['default']['NAME'])
+            env = dict(os.environ)
+            env["PGPASSWORD"] = settings.DATABASES['default']['PASSWORD']
 
-            pf = Popen(cmd,
-                env={'PGPASSWORD': settings.DATABASES['default']['PASSWORD']},
-                stdout=PIPE
-            )
+            pf = Popen(cmd, env=env, stdout=PIPE)
             dump = pf.communicate()[0]
         finally:
             drop_schema(schema_name)
