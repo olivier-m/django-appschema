@@ -22,6 +22,9 @@ def syncdb_apps(apps, schema=None, **options):
         load_post_syncdb_signals()
         return syncdb.Command().execute(**kwargs)
 
+    # Force default DB if not specified
+    options['database'] = options.get('database', db.DEFAULT_DB_ALIAS)
+
     # Syncdb without schema (on public)
     if not schema:
         schema_store.reset_path()
@@ -60,6 +63,9 @@ def migrate_apps(apps, schema=None, **options):
         load_post_syncdb_signals()
         for _app in _apps:
             migrate.Command().execute(_app, **kwargs)
+
+    # Force default DB if not specified
+    options['database'] = options.get('database', db.DEFAULT_DB_ALIAS)
 
     # Migrate without schema (on public)
     if not schema:

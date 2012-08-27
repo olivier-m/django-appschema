@@ -37,13 +37,14 @@ class Command(NoArgsCommand):
             if len(isolated_apps) == 0:
                 return
 
-            for schema in Schema.objects.active():
+            schema_list = [x.name for x in Schema.objects.active()]
+            for schema in schema_list:
                 if verbosity:
                     print "\n-------------------------------"
-                    print   "ISOLATED APPS syncdb on schema: %s" % schema.name
+                    print   "ISOLATED APPS syncdb on schema: %s" % schema
                     print   "-------------------------------\n"
 
-                syncdb_apps(isolated_apps, schema.name, **options)
+                syncdb_apps(isolated_apps, schema, **options)
         finally:
             load_post_syncdb_signals()
 
