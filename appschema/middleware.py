@@ -4,6 +4,7 @@
 # See the LICENSE for more information.
 
 from django.conf import settings
+from django.core.exceptions import SuspiciousOperation
 from django.http import Http404, HttpResponseRedirect
 
 from appschema.schema import schema_store
@@ -42,10 +43,10 @@ class FqdnMiddleware(object):
 
     def process_request(self, request):
         if self.should_process(request):
-            fqdn = request.get_host().split(':')[0]
             try:
+                fqdn = request.get_host().split(':')[0]
                 self.get_schema_name(fqdn)
-            except NoSchemaError:
+            except (NoSchemaError, SuspiciousOperation):
                 if hasattr(settings, 'APPSCHEMA_SCHEMA_REDIRECT'):
                     return HttpResponseRedirect(settings.APPSCHEMA_SCHEMA_REDIRECT)
                 raise
