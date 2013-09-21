@@ -2,9 +2,9 @@
 #
 # This file is part of Django appschema released under the MIT license.
 # See the LICENSE for more information.
-
 from django.conf import settings
 
+from .version import __version__
 
 if not hasattr(settings, 'APPSCHEMA_SHARED_APPS'):
     settings.APPSCHEMA_SHARED_APPS = ()

@@ -2,23 +2,35 @@
 #
 # This file is part of Django appschema released under the MIT license.
 # See the LICENSE for more information.
-
 from setuptools import setup, find_packages
 
-version = '0.5.1'
-packages = ['appschema'] + ['appschema.%s' % x for x in find_packages('appschema',)]
+execfile('appschema/version.py')
+
+packages = find_packages(exclude=['*.tests'])
+
+def readme():
+    with open('README.rst', 'r') as fp:
+        return fp.read()
+
 
 setup(
     name='appschema',
-    version=version,
+    version=__version__,
     description='SaaS helper that isolates django apps in schemas.',
+    long_description=readme(),
     author='Olivier Meunier',
-    author_email='om@neokraft.net',
-    url='http://bitbucket.org/cedarlab/django-appschema/',
+    author_email='olivier@neokraft.net',
+    url='https://github.com/olivier-m/django-appschema',
+    license='MIT License',
+    keywords='django database schema postgresql',
+    install_requires=[
+        'django>=1.4',
+    ],
     packages=packages,
     classifiers=[
-        'Development Status :: %s' % version,
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',
+        'Framework :: Django',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
