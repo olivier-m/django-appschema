@@ -2,6 +2,7 @@
 #
 # This file is part of Django appschema released under the MIT license.
 # See the LICENSE for more information.
+from multiprocessing import Process
 
 from django import db
 
@@ -13,7 +14,7 @@ from appschema.schema import schema_store
 from appschema.utils import get_apps, load_post_syncdb_signals, run_with_apps
 
 
-def syncdb_apps(apps, schema=None, **options):
+def _syncdb_apps(apps, schema=None, **options):
     """
     This function simply call syncdb command (Django or South one) for
     select apps only.
@@ -21,6 +22,10 @@ def syncdb_apps(apps, schema=None, **options):
     def wrapper(_apps, *args, **kwargs):
         load_post_syncdb_signals()
         return syncdb.Command().execute(**kwargs)
+
+    # Force connection close
+    db.connection.close()
+    db.connection.connection = None
 
     # Force default DB if not specified
     options['database'] = options.get('database', db.DEFAULT_DB_ALIAS)
@@ -58,11 +63,15 @@ def syncdb_apps(apps, schema=None, **options):
         schema_store.clear()
 
 
-def migrate_apps(apps, schema=None, **options):
+def _migrate_apps(apps, schema=None, **options):
     def wrapper(_apps, *args, **kwargs):
         load_post_syncdb_signals()
         for _app in _apps:
             migrate.Command().execute(_app, **kwargs)
+
+    # Force connection close
+    db.connection.close()
+    db.connection.connection = None
 
     # Force default DB if not specified
     options['database'] = options.get('database', db.DEFAULT_DB_ALIAS)
@@ -91,4 +100,22 @@ def migrate_apps(apps, schema=None, **options):
         run_with_apps(apps, wrapper, **options)
     finally:
         schema_store.clear()
-        del db.connection.settings_dict['SCHEMA']
+        if 'SCHEMA' in db.connection.settings_dict:
+            del db.connection.settings_dict['SCHEMA']
+
+
+def syncdb_apps(apps, schema=None, **options):
+    p = Process(target=_syncdb_apps, args=(apps, schema), kwargs=options)
+    p.start()
+    p.join()
+    p.terminate()
+    if p.exitcode != 0:
+        raise RuntimeError('Unexpected end of subprocess')
+
+
+def migrate_apps(apps, schema=None, **options):
+    p = Process(target=_migrate_apps, args=(apps, schema), kwargs=options)
+    p.start()
+    p.join()
+    if p.exitcode != 0:
+        raise RuntimeError('Unexpected end of subprocess')

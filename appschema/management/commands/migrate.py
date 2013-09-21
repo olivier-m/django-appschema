@@ -21,10 +21,7 @@ class Command(BaseCommand):
     help = migrate.Command.help
     args = migrate.Command.args
 
-    def handle(self, app=None, target=None, skip=False, merge=False,
-    backwards=False, fake=False, db_dry_run=False, show_list=False,
-    database=DEFAULT_DB_ALIAS, delete_ghosts=False, ignore_ghosts=False,
-    **options):
+    def handle(self, app=None, target=None, skip=False, merge=False, backwards=False, fake=False, db_dry_run=False, show_list=False, show_changes=False, database=DEFAULT_DB_ALIAS, delete_ghosts=False, ignore_ghosts=False, **options):
         if not 'south' in settings.INSTALLED_APPS:
             raise CommandError('South is not installed.')
 
@@ -64,7 +61,7 @@ class Command(BaseCommand):
                     print "SHARED APPS migration"
                     print "---------------------\n"
 
-                migrate_apps(shared_apps, None, **options)
+                migrate_apps(shared_apps, schema=None, **options)
 
             if len(isolated_apps) == 0:
                 return
@@ -73,8 +70,8 @@ class Command(BaseCommand):
             for schema in schema_list:
                 if verbosity:
                     print "\n----------------------------------"
-                    print   "ISOLATED APPS migration on schema: %s" % schema
-                    print   "----------------------------------\n"
+                    print "ISOLATED APPS migration on schema: %s" % schema
+                    print "----------------------------------\n"
                 migrate_apps(isolated_apps, schema=schema, **options)
         finally:
             load_post_syncdb_signals()

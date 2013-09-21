@@ -5,6 +5,7 @@
 
 from django.core import management
 from django.core.management.base import NoArgsCommand
+from django import db
 
 import appschema
 syncdb = appschema.syncdb()
@@ -32,7 +33,7 @@ class Command(NoArgsCommand):
                     print "SHARED APPS syncdb"
                     print "------------------\n"
 
-                syncdb_apps(shared_apps, **options)
+                syncdb_apps(shared_apps, schema=None, **options)
 
             if len(isolated_apps) == 0:
                 return
@@ -41,12 +42,14 @@ class Command(NoArgsCommand):
             for schema in schema_list:
                 if verbosity:
                     print "\n-------------------------------"
-                    print   "ISOLATED APPS syncdb on schema: %s" % schema
-                    print   "-------------------------------\n"
+                    print "ISOLATED APPS syncdb on schema: %s" % schema
+                    print "-------------------------------\n"
 
-                syncdb_apps(isolated_apps, schema, **options)
+                syncdb_apps(isolated_apps, schema=schema, **options)
         finally:
             load_post_syncdb_signals()
 
         if migrate:
+            db.connection.close()
+            db.connection.connection = None
             management.call_command("migrate")
