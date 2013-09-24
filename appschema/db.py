@@ -14,7 +14,7 @@ from appschema.schema import schema_store
 from appschema.utils import get_apps, load_post_syncdb_signals, run_with_apps
 
 
-def _syncdb_apps(apps, schema=None, **options):
+def _syncdb_apps(apps, schema=None, force_close=True, **options):
     """
     This function simply call syncdb command (Django or South one) for
     select apps only.
@@ -24,8 +24,9 @@ def _syncdb_apps(apps, schema=None, **options):
         return syncdb.Command().execute(**kwargs)
 
     # Force connection close
-    db.connection.close()
-    db.connection.connection = None
+    if force_close:
+        db.connection.close()
+        db.connection.connection = None
 
     # Force default DB if not specified
     options['database'] = options.get('database', db.DEFAULT_DB_ALIAS)
@@ -63,15 +64,16 @@ def _syncdb_apps(apps, schema=None, **options):
         schema_store.clear()
 
 
-def _migrate_apps(apps, schema=None, **options):
+def _migrate_apps(apps, schema=None, force_close=True, **options):
     def wrapper(_apps, *args, **kwargs):
         load_post_syncdb_signals()
         for _app in _apps:
             migrate.Command().execute(_app, **kwargs)
 
     # Force connection close
-    db.connection.close()
-    db.connection.connection = None
+    if force_close:
+        db.connection.close()
+        db.connection.connection = None
 
     # Force default DB if not specified
     options['database'] = options.get('database', db.DEFAULT_DB_ALIAS)
@@ -104,8 +106,8 @@ def _migrate_apps(apps, schema=None, **options):
             del db.connection.settings_dict['SCHEMA']
 
 
-def syncdb_apps(apps, schema=None, **options):
-    p = Process(target=_syncdb_apps, args=(apps, schema), kwargs=options)
+def syncdb_apps(apps, schema=None, force_close=True, **options):
+    p = Process(target=_syncdb_apps, args=(apps, schema, force_close), kwargs=options)
     p.start()
     p.join()
     p.terminate()
@@ -113,8 +115,8 @@ def syncdb_apps(apps, schema=None, **options):
         raise RuntimeError('Unexpected end of subprocess')
 
 
-def migrate_apps(apps, schema=None, **options):
-    p = Process(target=_migrate_apps, args=(apps, schema), kwargs=options)
+def migrate_apps(apps, schema=None, force_close=True, **options):
+    p = Process(target=_migrate_apps, args=(apps, schema, force_close), kwargs=options)
     p.start()
     p.join()
     if p.exitcode != 0:

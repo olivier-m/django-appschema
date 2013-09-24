@@ -9,7 +9,7 @@ import imp
 from django.db import connection, models, transaction
 from django.db.utils import DatabaseError, IntegrityError
 
-from appschema.db import syncdb_apps, migrate_apps
+from appschema.db import _syncdb_apps, _migrate_apps
 from appschema.schema import schema_store
 from appschema.south_utils import get_migration_candidates
 from appschema.utils import get_apps, escape_schema_name
@@ -60,8 +60,8 @@ def create_schema(name, **options):
 
         _, isolated_apps = get_apps()
 
-        syncdb_apps(isolated_apps, name, **sync_options)
-        migrate_apps(get_migration_candidates(isolated_apps), name, **options)
+        _syncdb_apps(isolated_apps, schema=name, force_close=False, **sync_options)
+        _migrate_apps(get_migration_candidates(isolated_apps), schema=name, force_close=False, **options)
         schema_store.reset_path()
     except BaseException:
         transaction.rollback_unless_managed()
